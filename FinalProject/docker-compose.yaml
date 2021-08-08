@@ -1,0 +1,108 @@
+version: "3.3"
+services:
+ app:
+  build:
+    context: .
+    dockerfile: multistage.dockerfile.txt
+  container_name: mylastapp
+  ports:
+    - "8050:8050"
+  environment:
+    - MY_NAME=MelLastapp
+  networks:
+    - sonarqube_network
+    - composenet
+  volumes:
+    - compose_volume:/app
+ database:
+    image: postgres:latest
+    container_name: postgress-db
+    volumes:
+      - ~/postgresql:/var/lib/postgresql
+      - postgresql_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=Alice2012
+    ports:
+      - "8000:8000"
+    restart: always
+    networks:
+      - sonarqube_network
+      - composenet
+  sonarqube:
+      depends_on:
+        - database
+      image: sonarqube:latest
+      container_name: sonarqube-last
+      volumes:
+        - sonarqube_data:/opt/sonarqube/data
+        - sonarqube_extensions:/opt/sonarqube/extensions
+        - sonarqube_logs:/opt/sonarqube/logs
+      environment:
+        - sonar.jdbc.url=jdbc:postgresql://postgres_db:5432/postgres
+        - sonar.jdbc.username=root
+        - sonar.jdbc.password=Alice2012
+        - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+      ports:
+       - "9000:9000"
+      restart: always
+      networks:
+       - sonarqube_network
+       - composenet
+ jenkins:
+    image: jenkins/jenkins:lts-jdk11
+    container_name: jenkins-last
+    volumes:
+      - jenkins_data:/var/jenkins_home
+    environment:
+      - JENKINS_NAME=Jenkins
+    ports:
+      - "8080:8080"
+      - "5000:5000"
+    restart: always
+    networks:
+      - sonarqube_network
+      - composenet
+ nexus:
+    image: sonatype/nexus3
+    container_name: nexus-last
+    volumes:
+      - nexus_data:/nexus-data
+    environment:
+      - NEXUS_NAME=Nexus
+    ports:
+     - "8081:8081"
+    restart: always
+    networks:
+      - sonarqube_network
+      - composenet
+ #portainer:
+ #   image: portainer:latest
+ #   container_name: portainer-last
+ #   volumes:
+ #     - /var/run/docker.sock:/var/run/docker.sock
+ #     - portainer_data:/data portainer/portainer-ce
+ #   environment:
+ #     - PORTAINER_NAME=Portainer
+ #   ports:
+ #     - "9001:9001"
+ #     - "8001:8001"
+ #     restart: always
+ #     networks:
+ #       - sonarqube_network
+ #       - composenet
+  networks:
+      sonarqube_network:
+      composenet:
+  volumes:
+     compose_volume:
+     postgresql_data:
+     sonarqube_data:
+     sonarqube_extensions:
+     sonarqube_logs:
+     jenkins_data:
+     nexus_data:
+     portainer_data:
+
+

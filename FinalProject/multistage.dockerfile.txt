@@ -1,0 +1,15 @@
+FROM python:3-alpine3.8 AS Builder
+COPY requirements.txt /tmp
+WORKDIR /tmp
+RUN pip3 install -r requirements.txt
+COPY . /home/src
+WORKDIR /home/src
+
+FROM python:3-alpine3.8
+COPY requirements.txt /tmp
+WORKDIR /tmp
+RUN pip3 install -r requirements.txt
+EXPOSE 8001
+COPY main.py /home/src
+CMD ["python", "./main.py" ]
+ENTRYPOINT ["/bin/echo", "Installation successfully!!"]
